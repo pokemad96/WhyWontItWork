@@ -1,78 +1,91 @@
 #include <vector>
+#include <time.h>
 
 using std::vector;
 
-double getPathLength(double deadspace, double ionCoefficient);
-void fileOut(vector<double> electrons, vector<double> holes);
+#define TOTALPOINTS 100
+#define ELECTRONCHARGE pow( 1.60217662, -19) 
+#define ETHRESHOLDELECTRON (2.8 * ELECTRONCHARGE)
+#define ETHRESHOLDHOLE (3.0 * ELECTRONCHARGE)
 
-int simulateCarriers(double edeadspace, double hdeadspace, double alphastar, double betastar, double width) {
+double getElectronPathLength(double eField);
+double getHolePathLength(double eField);
+void fileOut(vector<double> electrons, vector<double> holes);
+double alphaCoefficient(double eField);
+double betaCoefficient(double eField);
+void fileOut2(double eFields[], int carriers[]);
+
+
+int simulateCarriers(double eField, double width) {
 	vector<double> electrons;
 	vector<double> holes;
 	// creates 2 lists of vectors which contain the position of each electron and hole that exists
-	vector<double> electronStart;
-	vector<double> holeStart;
-	// creates 2 lists of vectors which contain the starting positions of every vector that exists
 
 	electrons.push_back(0);
-	electronStart.push_back(0);
 	// create an electron with a start position at the origin
 	int lastHole = 0;
+	double distance;
 
 	for (int x = 0; x < electrons.size(); x++) {
 		// count through all the electrons that exist
-		double distance = getPathLength(edeadspace, alphastar);
-		if (distance < (width - electrons.at(x))) {
+		distance = getElectronPathLength(eField);
+		electrons.at(x) += distance;
+		if (electrons.at(x) < width) {
 			// if the electron does an impact ionisation before reaching the end of the avalanche region
 			// create a free electron and hole with position at the distance travelled
-			electrons.at(x) += distance;
 			electrons.push_back(electrons.at(x));
 			holes.push_back(electrons.at(x));
-			electronStart.push_back(electrons.at(x));
-		}
-		else {
-			electronStart.push_back(electrons.at(x));
 		}
 		for (int y = lastHole; y < holes.size(); y++) {
 			// count from the last hole that was counted to the last hole that exists
-			distance = getPathLength(hdeadspace, betastar);
+			distance = getHolePathLength(eField);
 			lastHole = holes.size();
-			if (distance < (width - holes.at(y))) {
+			holes.at(y) -= distance;
+			if (holes.at(y) > 0 ) {
 				// if the hole does an impact ionisation before reaching the end of the avalanche region
 				// create a free electron and hole with position at the distance travelled
-				holes.at(y) += distance;
 				electrons.push_back(holes.at(y));
 				holes.push_back(holes.at(y));
-				holeStart.push_back(holes.at(y) + distance);
 			}
-			else {
-				holeStart.push_back(holes.at(y) + distance);
-			}
-			printf("I am doing something!\n");
 		}
 	}
 
 	int numberCarriers = electrons.size() + holes.size();
 
-	printf("%d\n", electronStart.size());
-	printf("%d\n", holeStart.size());
-
-	fileOut(electronStart, holeStart);
 	return numberCarriers;
 }
 
-void fileOut(vector<double> electrons, vector<double> holes) {
+void fileOut(double eField[], double gain[], double noiseFactor[], int dataSize) {
 	FILE* fp;
 	errno_t err;
 
-	err = fopen_s(&fp, "C:/Users/Johnathan/Documents/_Uni Stuff/Individual Project/pathLengthsSimulation.csv", "w");
+	err = fopen_s(&fp, "C:/Users/Johnathan/Documents/_Uni Stuff/Individual Project/meanGain.csv", "w");
 	if (err == 0) {
-		fprintf(fp, "  Carrier Number:  ,  Carrier Distance  \n");
-		fprintf(fp, " 1 ,  %.10lf  \n", electrons.at(0));
-		for (int i = 1; i < 10; i++) {
-			fprintf(fp, "%d  ,  %.10lf  \n %d  ,  %.10lf    \n", 2 * i ,electrons.at(i), 2 * i + 1, holes.at(i-1));
+		fprintf(fp, "  Electric Field Strength:  ,  Mean Gain:  ,  Noise Factor: \n");
+		for (int i = 0; i < dataSize; i++) {
+			fprintf(fp, "%.10lf , %.10lf , %.10f \n", eField[i], gain[i], noiseFactor[i]);
 		}
 	}
 	else {
 		printf("There was an error opening the file!");
 	}
 }
+
+void fileOut2(double eFields[], int carriers[]) {
+	FILE* fp;
+	errno_t err;
+
+	err = fopen_s(&fp, "C:/Users/Johnathan/Documents/_Uni Stuff/Individual Project/carriersSimulation.csv", "w");
+	if (err == 0) {
+		fprintf(fp, "  Electric Field:  ,  Number of Carriers:  \n");
+		for (int i = 1; i < TOTALPOINTS; i++) {
+			fprintf(fp, "%lf  ,  %d  \n", eFields[i], carriers[i]);
+		}
+	}
+	else {
+		printf("There was an error opening the file!");
+	}
+}
+
+
+

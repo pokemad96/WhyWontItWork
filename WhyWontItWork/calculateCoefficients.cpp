@@ -1,17 +1,36 @@
 #include <stdio.h>
 #include <math.h>
 
-#define TOTALPOINTS 100
+#define TOTALPOINTS 5000
+#define ELECTRONCHARGE pow( 1.60217662, -19) 
+#define ETHRESHOLDELECTRON (2.8 * ELECTRONCHARGE)
+#define ETHRESHOLDHOLE (3.0 * ELECTRONCHARGE)
 
 double alphaCoefficient(double eField);
 double betaCoefficient(double eField);
-void fileOut(double inverseEField[],  double alphaStar[], double betaStar[]);
+
+void fileOut(int inverseEField[], double alphaStar[], double betaStar[]) {
+	FILE* fp;
+	errno_t err;
+	int dataSize = TOTALPOINTS;
+
+	err = fopen_s(&fp, "C:/Users/Johnathan/Documents/_Uni Stuff/Individual Project/pathLengths.csv", "w");
+	if (err == 0) {
+		fprintf(fp, "inverse E field: ,  alpha_Star: ,  beta_Star:   \n");
+		for (int i = 0; i < dataSize; i++) {
+			fprintf(fp, "%d  ,  %.10lf  ,  %.10lf    \n", inverseEField[i], alphaStar[i], betaStar[i]);
+		}
+	}
+	else {
+		printf("There was an error opening the file!");
+	}
+}
 
 int runCode () {
 	double eField[TOTALPOINTS];
 	double alphaStar[TOTALPOINTS];
 	double betaStar[TOTALPOINTS];
-	double inverseEField[TOTALPOINTS];
+	int inverseEField[TOTALPOINTS];
 
 	double step = (850000 - 180000) / TOTALPOINTS;
 
@@ -41,19 +60,14 @@ double betaCoefficient(double eField) {
 	return betaStar;
 }
 
-void fileOut(double inverseEField[], double alphaStar[], double betaStar[]) {
-	FILE* fp;
-	errno_t err;
-	int dataSize = TOTALPOINTS;
+double electronDeadSpace(double eField) {
+	double electronDeadSpace;
+	electronDeadSpace = ETHRESHOLDELECTRON / (ELECTRONCHARGE * eField);
+	return electronDeadSpace;
+}
 
-	err = fopen_s(&fp, "C:/Users/Johnathan/Documents/_Uni Stuff/Individual Project/ionisationCoefficients.csv", "w");
-	if (err == 0) {
-		fprintf(fp, "inverse E field: ,  alpha_Star: ,  beta_Star:   \n");
-		for (int i = 0; i < dataSize; i++) {
-			fprintf(fp, "%.10lf  ,  %.10lf  ,  %.10lf    \n", inverseEField[i], alphaStar[i], betaStar[i]);
-		}
-	}
-	else {
-		printf("There was an error opening the file!");
-	}
+double holeDeadSpace(double eField) {
+	double holeDeadSpace;
+	holeDeadSpace = ETHRESHOLDHOLE / (ELECTRONCHARGE * eField);
+	return holeDeadSpace;
 }

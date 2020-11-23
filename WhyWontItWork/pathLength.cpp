@@ -1,67 +1,126 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <time.h>
 #define TOTALPOINTS 5000
-// diefines the number of points that the program will calculate and plot in csv file
+// defines the number of points that the program will calculate and plot in csv file
 
+void testPathLength2();
+void fileOut2(double randNum[]);
+double electronDeadSpace(double eField);
+double holeDeadSpace(double eField);
+double alphaCoefficient(double eField);
+double betaCoefficient(double eField);
 void fileOut(int inverseEField[], double alphaStar[], double betaStar[]);
+double getRand();
 
-double getRand() {
-	// returns a random double between 0 and 1
-	double randN;
-	randN = (float) (rand()) / RAND_MAX;
-	return randN;
+void fileOut(double inverseEField[], double alphaStar[], double betaStar[]) {
+	printf("I'm printing something\n");
+	FILE* fp;
+	errno_t err;
+	int dataSize = 67;
+
+	err = fopen_s(&fp, "C:/Users/Johnathan/Documents/_Uni Stuff/Individual Project/meanValues.csv", "w");
+	if (err == 0) {
+		fprintf(fp, "Electric Field: ,  Electron Path Length Mean: ,  Hole Path Length Mean:   \n");
+		for (int i = 0; i < dataSize; i++) {
+			fprintf(fp, "%.10lf  ,  %.10lf  ,  %.10lf  \n", inverseEField[i], alphaStar[i], betaStar[i]);
+		}
+	}
+	else {
+		printf("There was an error opening the file!");
+	}
 }
 
-double getPathLength(double deadspace, double ionCoefficient) {
+double getElectronPathLength(double eField) {
 	// uses deadspace and either alpha or beta coefficient to calculate a random path length
 	double pathLength;
+	double deadSpace = electronDeadSpace(eField);
+	double ionCoefficient = alphaCoefficient(eField);
 
-	pathLength = deadspace - (log (getRand()) / ionCoefficient);
+	pathLength = deadSpace - (log (getRand()) / ionCoefficient);
 	pathLength /= 100;
 	return pathLength;
 }
 
-double getMean(double values[]) {
+double getHolePathLength(double eField) {
+	// uses deadspace and either alpha or beta coefficient to calculate a random path length
+	double pathLength;
+	double deadSpace = holeDeadSpace(eField);
+	double ionCoefficient = betaCoefficient(eField);
+
+	pathLength = deadSpace - (log(getRand()) / ionCoefficient);
+	pathLength /= 100;
+	return pathLength;
+}
+
+double getMean(double values[], int totalValues) {
 	double total = 0;
 	double mean;
-	for (int i = 0; i < TOTALPOINTS; i++) {
+	double arraySize = (double) totalValues;
+	for (int i = 0; i < totalValues; i++) {
 		total += values[i];
 	}
-	mean = total / TOTALPOINTS;
+	mean = total / arraySize;
 	return mean;
 }
 
-void testPathLength(double edeadspace, double hdeadspace, double alphastar, double betastar) {
+void testPathLength() {
 	int testNumber[TOTALPOINTS];
 
 	double pathLengths[TOTALPOINTS];
 	double pathLengths2[TOTALPOINTS];
-	for (int i = 0; i < TOTALPOINTS; i++) {
-		testNumber[i] = i + 1;
-	}
-	for (int i = 0; i < TOTALPOINTS; i++) {
-		pathLengths[i] = getPathLength(edeadspace, alphastar);
-	}
-	for (int i = 0; i < TOTALPOINTS; i++) {
-		pathLengths2[i] = getPathLength(hdeadspace, betastar);
+	double mean[67];
+	double mean2[67];
+	double eField[67];
+	
+	for (int i = 0; i < 67; i++) {
+		eField[i] = (double)180000 + (double)10000 * (double)(i);
 	}
 
-	printf("%.10lf\n", getMean(pathLengths));
+	for (int i = 0; i < 67; i++) {
+		for (int j = 0; j < TOTALPOINTS; j++) {
+			pathLengths[j] = getElectronPathLength(eField[i]);
+		}
+		for (int j = 0; j < TOTALPOINTS; j++) {
+			pathLengths2[j] = getHolePathLength(eField[i]);
+		}
+		mean[i] = getMean(pathLengths, TOTALPOINTS);
+		mean2[i] = getMean(pathLengths2, TOTALPOINTS);
+	}
 
-	fileOut(testNumber, pathLengths, pathLengths2);
+	fileOut(eField, mean, mean2);
 }
 
-void fileOut(int inverseEField[], double alphaStar[], double betaStar[]) {
+void testPathLength2() {
+	int testNumber[TOTALPOINTS];
+
+	double pathLengths[TOTALPOINTS];
+	double pathLengths2[TOTALPOINTS];
+	double eField = 600000;
+
+	for (int i = 0; i < TOTALPOINTS; i++) {
+		pathLengths[i] = getElectronPathLength(eField);
+		testNumber[i] = i;
+	}
+	for (int i = 0; i < TOTALPOINTS; i++) {
+		pathLengths2[i] = getHolePathLength(eField);
+	}
+
+	fileOut(testNumber, pathLengths, pathLengths);
+}
+
+
+void fileOut2(double randNum[]) {
 	FILE* fp;
 	errno_t err;
 	int dataSize = TOTALPOINTS;
 
-	err = fopen_s(&fp, "C:/Users/Johnathan/Documents/_Uni Stuff/Individual Project/pathLengths.csv", "w");
+	err = fopen_s(&fp, "C:/Users/Johnathan/Documents/_Uni Stuff/Individual Project/randomFunction.csv", "w");
 	if (err == 0) {
-		fprintf(fp, "Test Number: ,  Electron Path Length: ,  Hole Path Length:   \n");
+		fprintf(fp, "Trial Number: ,  Random Number: \n");
 		for (int i = 0; i < dataSize; i++) {
-			fprintf(fp, "%d  ,  %.10lf  ,  %.10lf    \n", inverseEField[i], alphaStar[i], betaStar[i]);
+			fprintf(fp, "%d  ,  %.10lf  \n", i, randNum[i]);
 		}
 	}
 	else {

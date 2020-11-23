@@ -33,5 +33,11 @@
     <ClCompile Include="simulateCarriers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="randFunction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Noise Factor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
